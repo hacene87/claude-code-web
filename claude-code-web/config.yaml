@@ -1,0 +1,43 @@
+# Claude Code Web - Configuration
+# Copy this file to config.local.yaml and customize
+
+server:
+  host: "127.0.0.1"
+  port: 8080
+  # Enable auto-reload for development
+  reload: false
+
+# Default workspace when none specified
+workspace:
+  default: "~"
+  # Paths to show in quick-access list
+  favorites:
+    - "~/projects"
+    - "~/code"
+
+# Session storage
+sessions:
+  # Directory to store conversation history
+  storage_path: ".claude-web-sessions"
+  # How many conversations to keep
+  max_conversations: 100
+  # Auto-save interval in seconds
+  auto_save_interval: 30
+
+# Claude Code CLI settings
+claude:
+  # Path to claude executable (leave empty for auto-detect)
+  executable_path: ""
+  # Default output format
+  output_format: "stream-json"
+  # Maximum response time in seconds
+  timeout: 300
+
+# UI settings
+ui:
+  # Default theme (dark/light)
+  theme: "dark"
+  # Enable sound notifications
+  sound_notifications: false
+  # Auto-scroll to new messages
+  auto_scroll: true
