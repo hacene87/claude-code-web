@@ -1,0 +1,81 @@
+# Odoo Automation Service Configuration
+# ======================================
+# Copy this file to config.yaml and modify as needed
+
+# GitHub/Git Repository Monitoring
+github:
+  repositories:
+    - path: "/home/odoo/custom_addons"
+      remote: "origin"
+      branch: "main"
+      enabled: true
+      modules_whitelist: []    # Empty = all modules
+      modules_blacklist: []    # Modules to ignore
+
+    # Example additional repository
+    # - path: "/home/odoo/client_modules"
+    #   remote: "origin"
+    #   branch: "develop"
+    #   enabled: true
+
+  polling_interval: 60         # Seconds (1-300)
+  max_concurrent_pulls: 3      # Parallel git operations
+
+# Odoo Instance Configuration
+odoo:
+  config_path: "/etc/odoo/odoo.conf"
+  database: "odoo"
+  addons_paths:
+    - "/home/odoo/custom_addons"
+  log_file: "/var/log/odoo/odoo.log"
+  service_name: "odoo"
+  bin_path: "/usr/bin/odoo"
+
+# Backup Configuration
+backup:
+  enabled: true
+  retention_days: 7
+  compression: true
+  include_filestore: true
+  backup_path: "/var/backups/odoo"
+
+# Claude Code CLI Configuration
+claude:
+  enabled: true
+  timeout_seconds: 300        # 5 minutes max per fix attempt
+  max_turns: 10
+  allowed_tools:
+    - "Edit"
+    - "Read"
+    - "Bash"
+    - "Write"
+
+# Retry Mechanism Configuration
+retry:
+  max_attempts: 5
+  base_delay_seconds: 60      # 1 minute
+  multiplier: 2.0             # Exponential backoff factor
+  max_delay_seconds: 960      # 16 minutes cap
+
+# API Server Configuration
+api:
+  host: "0.0.0.0"
+  port: 8000
+  cors_origins:
+    - "*"
+  rate_limit_per_minute: 100
+
+# Authentication Configuration
+auth:
+  secret_key: "change-this-to-a-secure-random-string"
+  algorithm: "HS256"
+  access_token_expire_minutes: 60
+  refresh_token_expire_days: 7
+
+# Logging Configuration
+logging:
+  level: "INFO"
+  format: "json"
+  file_path: "/var/log/oas/oas.log"
+  rotation_size_mb: 100
+  retention_days: 30
