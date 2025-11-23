@@ -102,7 +102,7 @@ class StreamHandler:
         conversation_id: str,
         async_generator,
         client_id: Optional[str] = None
-    ):
+    ) -> Optional[str]:
         """
         Stream Claude Code responses to connected clients.
 
@@ -110,8 +110,12 @@ class StreamHandler:
             conversation_id: The conversation ID
             async_generator: Async generator yielding response chunks
             client_id: Optional specific client to send to
+
+        Returns:
+            The Claude session_id for multi-turn conversations, or None
         """
         full_response = []
+        session_id = None
 
         async for chunk in async_generator:
             message = {
@@ -130,6 +134,11 @@ class StreamHandler:
             if chunk.get("type") == "text":
                 full_response.append(chunk.get("content", ""))
 
+            # Extract session_id from done message
+            if chunk.get("type") == "done":
+                metadata = chunk.get("metadata", {})
+                session_id = metadata.get("session_id")
+
             # Small delay to prevent overwhelming the client
             await asyncio.sleep(0.01)
 
@@ -139,7 +148,8 @@ class StreamHandler:
             "conversation_id": conversation_id,
             "timestamp": datetime.now().isoformat(),
             "data": {
-                "full_response": "".join(full_response)
+                "full_response": "".join(full_response),
+                "session_id": session_id
             }
         }
 
@@ -147,3 +157,5 @@ class StreamHandler:
             await self.manager.send_personal_message(completion_message, client_id)
         else:
             await self.manager.broadcast_to_conversation(completion_message, conversation_id)
+
+        return session_id

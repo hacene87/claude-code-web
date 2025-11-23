@@ -181,7 +181,11 @@ class ClaudeCodeWeb {
                 this.handleError(data);
                 break;
             case 'message_received':
-                // Message acknowledged
+                // Message acknowledged - capture conversation_id for multi-turn conversations
+                if (data.conversation_id && !this.conversationId) {
+                    this.conversationId = data.conversation_id;
+                    this.loadConversations(); // Refresh sidebar
+                }
                 break;
             case 'subscribed':
             case 'unsubscribed':

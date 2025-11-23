@@ -331,6 +331,9 @@ async def handle_chat_message(client_id: str, data: dict):
     if not conversation_id:
         conversation_id = conversation_manager.create_conversation(workspace)
 
+    # Get Claude's session ID for multi-turn conversation
+    claude_session_id = conversation_manager.get_claude_session_id(conversation_id)
+
     # Subscribe client to conversation
     await ws_manager.subscribe(client_id, conversation_id)
 
@@ -350,11 +353,16 @@ async def handle_chat_message(client_id: str, data: dict):
     # Start streaming response
     async def stream_task():
         try:
-            await stream_handler.stream_response(
+            session_id = await stream_handler.stream_response(
                 conversation_id,
-                claude.chat_stream(message, workspace, conversation_id),
+                claude.chat_stream(message, workspace, conversation_id, claude_session_id),
                 client_id
             )
+            # Store the session_id for future messages in this conversation
+            logger.info(f"[DEBUG] stream_response returned session_id: {session_id}")
+            if session_id:
+                logger.info(f"[DEBUG] Saving claude_session_id {session_id} for conversation {conversation_id}")
+                conversation_manager.set_claude_session_id(conversation_id, session_id)
         except asyncio.CancelledError:
             await ws_manager.send_personal_message(
                 {"event": "cancelled", "conversation_id": conversation_id},

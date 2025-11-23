@@ -66,6 +66,7 @@ class ClaudeCodeInterface:
         message: str,
         workspace: str = ".",
         conversation_id: Optional[str] = None,
+        claude_session_id: Optional[str] = None,
         on_chunk: Optional[Callable[[str, str, Dict], None]] = None
     ) -> AsyncGenerator[Dict[str, Any], None]:
         """
@@ -74,7 +75,8 @@ class ClaudeCodeInterface:
         Args:
             message: The message to send
             workspace: Working directory
-            conversation_id: Optional conversation ID for continuation
+            conversation_id: Optional internal conversation ID for tracking
+            claude_session_id: Optional Claude CLI session ID for multi-turn conversations
             on_chunk: Optional callback for each chunk
 
         Yields:
@@ -96,9 +98,9 @@ class ClaudeCodeInterface:
             "--verbose",  # Required for stream-json
         ]
 
-        # Note: We don't use --resume with our internal conversation_id
-        # because it's not Claude's session ID. For multi-turn conversations,
-        # we would need to track Claude's actual session ID from the response.
+        # Use --resume with Claude's session ID for multi-turn conversations
+        if claude_session_id:
+            cmd.extend(["--resume", claude_session_id])
 
         # Add the message as positional argument
         cmd.append(message)
@@ -158,12 +160,9 @@ class ClaudeCodeInterface:
                     "content": f"Process exited with code {process.returncode}: {error_text}",
                     "metadata": {"return_code": process.returncode}
                 }
-
-            yield {
-                "type": "done",
-                "content": "",
-                "metadata": {"conversation_id": proc_id}
-            }
+            # Note: We don't yield a "done" message here because _parse_stream_json
+            # already yields one when it sees the "result" message from Claude CLI,
+            # which includes the session_id needed for multi-turn conversations.
 
         except asyncio.CancelledError:
             yield {
@@ -224,11 +223,17 @@ class ClaudeCodeInterface:
         elif msg_type == "result":
             # Final result - don't re-emit the result text since we already
             # received it via content_block_delta streaming messages.
-            # Just signal completion.
+            # Extract session_id for multi-turn conversation support.
+            session_id = data.get("session_id")
+            logger.info(f"[DEBUG] Result message received, session_id: {session_id}")
             return {
                 "type": "done",
                 "content": "",
-                "metadata": data
+                "metadata": {
+                    "session_id": session_id,
+                    "duration_ms": data.get("duration_ms"),
+                    "total_cost_usd": data.get("total_cost_usd"),
+                }
             }
 
         elif msg_type == "system":
@@ -335,11 +340,25 @@ class ConversationManager:
             "id": conv_id,
             "workspace": workspace,
             "messages": [],
+            "claude_session_id": None,  # Will be set after first Claude response
             "created_at": datetime.now().isoformat(),
             "updated_at": datetime.now().isoformat()
         }
         self._save_conversation(conv_id)
         return conv_id
+
+    def set_claude_session_id(self, conv_id: str, session_id: str):
+        """Set Claude's session ID for multi-turn conversations."""
+        if conv_id in self.conversations:
+            self.conversations[conv_id]["claude_session_id"] = session_id
+            self._save_conversation(conv_id)
+
+    def get_claude_session_id(self, conv_id: str) -> Optional[str]:
+        """Get Claude's session ID for a conversation."""
+        conv = self.conversations.get(conv_id)
+        if conv:
+            return conv.get("claude_session_id")
+        return None
 
     def add_message(self, conv_id: str, role: str, content: str, metadata: Dict = None):
         """Add a message to a conversation."""
