@@ -63,6 +63,18 @@ async def root():
     return HTMLResponse(content="<h1>Claude Code Web</h1><p>Frontend not found.</p>")
 
 
+@app.get("/favicon.ico")
+async def favicon():
+    """Serve favicon."""
+    from fastapi.responses import Response
+    # Simple lightning bolt SVG as favicon
+    svg = '''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+        <rect width="32" height="32" rx="6" fill="#1a1a2e"/>
+        <path d="M18 4L8 18h6l-2 10 10-14h-6l2-10z" fill="#f5a623"/>
+    </svg>'''
+    return Response(content=svg, media_type="image/svg+xml")
+
+
 @app.get("/api/health")
 async def health_check():
     """Health check endpoint."""

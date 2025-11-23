@@ -88,16 +88,17 @@ class ClaudeCodeInterface:
         # Build command
         cmd = [
             self.claude_path,
+            "-p",  # Print mode (non-interactive)
             "--output-format", "stream-json",
-            "--verbose"
+            "--verbose",  # Required for stream-json
         ]
 
         # Add conversation continuation if provided
         if conversation_id:
             cmd.extend(["--resume", conversation_id])
 
-        # Add the message
-        cmd.extend(["--print", message])
+        # Add the message as positional argument
+        cmd.append(message)
 
         # Expand workspace path
         workspace_path = os.path.abspath(os.path.expanduser(workspace))
@@ -218,14 +219,24 @@ class ClaudeCodeInterface:
                 }
 
         elif msg_type == "result":
-            # Final result
+            # Final result - also extract the result text if available
+            result_text = data.get("result", "")
+            if result_text:
+                return {
+                    "type": "text",
+                    "content": result_text,
+                    "metadata": {"final": True}
+                }
             return {
-                "type": "status",
-                "content": f"Completed: {data.get('subtype', 'unknown')}",
+                "type": "done",
+                "content": "",
                 "metadata": data
             }
 
         elif msg_type == "system":
+            # Skip system init messages, only return actual system messages
+            if data.get("subtype") == "init":
+                return None
             return {
                 "type": "status",
                 "content": data.get("message", ""),
@@ -263,8 +274,9 @@ class ClaudeCodeInterface:
 
         cmd = [
             self.claude_path,
+            "-p",  # Print mode (non-interactive)
             "--output-format", "json",
-            "--print", command
+            command  # Message as positional argument
         ]
 
         try:
