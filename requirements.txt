@@ -1,0 +1,25 @@
+# Claude Code Web - Python Dependencies
+
+# Web framework
+fastapi>=0.109.0
+uvicorn[standard]>=0.27.0
+
+# Data validation
+pydantic>=2.5.0
+
+# WebSocket support (included in uvicorn[standard])
+websockets>=12.0
+
+# YAML configuration
+pyyaml>=6.0.1
+
+# Async support
+aiofiles>=23.2.1
+
+# Additional utilities
+python-multipart>=0.0.6
+
+# Development dependencies (optional)
+# pytest>=7.4.0
+# pytest-asyncio>=0.23.0
+# httpx>=0.26.0
