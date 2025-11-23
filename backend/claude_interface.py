@@ -222,14 +222,9 @@ class ClaudeCodeInterface:
                 }
 
         elif msg_type == "result":
-            # Final result - also extract the result text if available
-            result_text = data.get("result", "")
-            if result_text:
-                return {
-                    "type": "text",
-                    "content": result_text,
-                    "metadata": {"final": True}
-                }
+            # Final result - don't re-emit the result text since we already
+            # received it via content_block_delta streaming messages.
+            # Just signal completion.
             return {
                 "type": "done",
                 "content": "",
