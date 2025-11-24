@@ -415,7 +415,9 @@ def main():
         "main:app",
         host=args.host,
         port=args.port,
-        reload=args.reload
+        reload=args.reload,
+        # Exclude patterns to prevent reload when Claude creates files in workspace
+        reload_excludes=["*.pyc", "__pycache__", ".claude*", "partner_*", "odoo_*", "module_*"] if args.reload else None
     )
 
 

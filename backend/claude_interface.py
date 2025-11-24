@@ -25,8 +25,10 @@ class ClaudeCodeInterface:
 
     def _find_claude_executable(self) -> Optional[str]:
         """Find the Claude Code CLI executable."""
-        # Check common locations
+        # Check common locations - prefer claude-auto alias first
         possible_paths = [
+            "claude-auto",  # Preferred alias with auto-accept
+            shutil.which("claude-auto"),
             "claude",  # In PATH
             "/usr/local/bin/claude",
             "/usr/bin/claude",
